@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<style>
+/* all element styling should go here */
+#thevis {
+	outline: #000000 solid 5px;
+	background-color: #d3d3d3;
+}
+
+.arc text {
+	font: 12px sans-serif;
+	text-anchor: middle;
+}
+
+.arc path {
+	stroke: #fff;
+}
+
+.legend {
+    font-size: 12px;
+}
+
+rect {
+    stroke-width: 1;
+    stroke: #000;
+}
+</style>
+<svg id="thevis" width="800" height="500"></svg> <!-- do not change this line -->
+<script src="lib/d3.v4.js"></script> <!-- change to d3.v3.js if you want -->
+<script src="student.js"></script> <!-- do not change this line -->
+<script>
+
+/* code for creating good visualization goes here */
+
+/* I used this as the basis for my pie chart: https://bl.ocks.org/mbostock/3887235*/
+
+var svg = d3.select("svg"),
+    width = +svg.attr("width") - 50,
+    height = +svg.attr("height") - 50,
+    radius = Math.min(width, height) / 2,
+    g = svg.append("g").attr("transform", "translate(375, 260)");
+
+//I used this as the basis for the the title: http://www.d3noob.org/2013/01/adding-title-to-your-d3js-graph.html
+svg.append("text")
+	.attr("x", (width/2) + 10)
+	.attr("y", (height / 2) - 190)
+	.attr("text-anchor", "middle")
+	.style("font-family", "sans-serif")
+	.style("font-size", "20px")
+	.text("Percentage of Injuries");
+
+var color = ["#ffefef", "#fcdad9", "#f9bebb", "#fc9a94", "#ff6860", "#ff0000", "#a80000"];
+
+var pie = d3.pie()
+    .sort(null)
+    .value(function(d) { return d.percentage; });
+
+var path = d3.arc()
+    .outerRadius(radius - 10)
+    .innerRadius(0);
+
+var label = d3.arc()
+    .outerRadius(radius - 40)
+    .innerRadius(radius - 40);
+
+d3.csv("data/asics.csv", function(d) {
+  d.population = +d.population;
+  return d;
+}, function(error, data) {
+  if (error) throw error;
+
+  var arc = g.selectAll(".arc")
+	.data(pie(data))
+    .enter().append("g")
+    .attr("class", "arc");
+
+  arc.append("path")
+    .attr("d", path)
+    .attr("fill", function(d) {
+      	var recovery = d.data.recovery;
+      	var tmp = Math.floor(recovery) - 6;
+      	return color[tmp];
+    });
+
+  arc.append("text")
+      .attr("transform", function(d) { return "translate(" + label.centroid(d) + ")"; })
+      .attr("dy", "0.35em")
+      .text(function(d) { return d.data.part; });
+
+  arc.append("text")
+  		.attr("transform", function(d) { return "translate(" + label.centroid(d) + ")";})
+  		.attr("dy", "1.5em")
+  		.text(function(d) { return d.data.percentage + "%";});	
+
+  var legendRectSize = 18;
+  var legendSpacing = 4;
+
+});
+
+// The following 3 links helped me understand the ordinal scale method:
+	//https://github.com/d3/d3/blob/master/API.md#ordinal-scales
+	//https://github.com/d3/d3-scale/blob/master/README.md#scaleOrdinal
+	//https://github.com/d3/d3-scale
+// I used these two links as the basis for the legend:
+	//http://stackoverflow.com/questions/43196546/d3-legend-for-a-color-scale
+	//http://www.competa.com/blog/d3-js-part-7-of-9-adding-a-legend-to-explain-the-data/
+
+var colorscale = d3.scaleOrdinal()
+	.domain(["6 to 7", "7 to 8", "8 to 9", "9 to 10", "10 to 11", "11 to 12", "12"])
+	.range(color);
+
+svg.append("text")
+	.attr("x", 600)
+	.attr("y", 140)
+	.style("font-family", "sans-serif")
+	.text("Recovery Time in Days");
+
+drawColorScale();
+
+function drawColorScale() {
+	var legend = svg.selectAll(".legend")
+		.data(colorscale.domain())
+	  	.enter().append("g")
+	  	.attr("transform", function(d, i) {
+	  		return "translate(" + (width - 110) + "," + (150 + i * 20) + ")";
+	  	})
+	  	.attr("class", "legend");
+
+  legend.append("rect")
+  	.attr("width", 15)
+  	.attr("height", 15)
+  	.style('fill', colorscale);
+
+  legend.append("text")
+  	.text(function(d) {
+  		return d;
+  	})
+  	.style("font-size", 14)
+  	.style("font-family", "sans-serif")
+  	.attr("y", 12)
+  	.attr("x", 20);
+ }
+
+/* Answer assignment questions here:
+
+1)
+a) part: Part is encoded textually, using the layout pie chart to represent all possible body parts.
+
+b) percentage: Percentage is encoded in a pie chart, with the area of the corresponding arc encoding the percentage of injury. There is also a text component for clarity.
+
+c) recovery: Recovery is encoded with color, with the intensity of the color corresponding to the magnitude of the recovery time.
+
+2) This is a good visualization because one can easily, by looking at any given body part's arc, determine the relative frequency of that part's injury percentage, as well as visualize the distribution of the percentage of all parts and easily determine which are the minimal and maximal in terms of both recovery time and percentage. 
+
+*/
+
+</script>
