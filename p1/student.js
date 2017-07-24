@@ -1,0 +1,2 @@
+/* put here any javascript code that you want to use in both
+   bad.html and good.html */

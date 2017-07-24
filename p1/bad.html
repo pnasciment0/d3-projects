@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<style>
+/* all element styling should go here */
+#thevis {
+	outline: #000000 solid 5px;
+	background-color: #d3d3d3;
+}
+
+</style>
+<svg id="thevis" width="800" height="500"></svg> <!-- do not change this line -->
+<script src="lib/d3.v4.js"></script> <!-- change to d3.v3.js if you want -->
+<script src="student.js"></script> <!-- do not change this line -->
+<script>
+
+// I used this as the basis for the stacked bar chart: https://bl.ocks.org/mbostock/3886208
+// The majority of this code was taken from the above source
+
+var svg = d3.select("svg")
+	width = +svg.attr("width") - 50,
+	height = +svg.attr("height") - 50,
+	radius = Math.min(width, height) / 2,
+	g = svg.append("g").attr("transform", "translate(30, 20)");
+
+var x = d3.scaleBand()
+	.rangeRound([0, width])
+	.paddingInner(0.05)
+	.align(0,1);
+
+var y = d3.scaleLinear()
+	.rangeRound([height, 0]);
+
+// Two colors, two variables
+
+var color = ["#e22b2b", "#f28963"];
+
+var z = d3.scaleOrdinal()
+	.range(color);
+
+
+d3.csv("data/asics.csv", function(d) {
+	d.percentage = +d.percentage;
+	d.recovery = +d.recovery;
+	d.total = d.percentage + d.recovery;
+	return d;
+}, function(error, data) {
+	if (error) throw error;
+
+	var keys = data.columns.slice(1);
+
+	data.sort(null);
+	x.domain(data.map(function(d) {return d.part;}));
+	y.domain([0, d3.max(data, function(d) {return d.total;})]).nice();
+	z.domain(keys);
+
+	g.append("g")
+		.selectAll("g")
+		.data(d3.stack().keys(keys)(data))
+		.enter().append("g")
+			.attr("fill", function(d) {return z(d.key);})
+		.selectAll("rect")
+		.data(function(d) {return d;})
+		.enter().append("rect")
+			.attr("x", function(d) { return x(d.data.part);})
+			.attr("y", function(d) { return y(d[1]); })
+			.attr("height", function(d) {return y(d[0]) - y(d[1]);})
+			.attr("width", x.bandwidth());
+
+	g.append("g")
+		.attr("class", "axis")
+		.attr("transform", "translate(0," + height + ")")
+		.call(d3.axisBottom(x));
+
+	// I used this reference to help with the axis: https://github.com/d3/d3-axis
+
+	g.append("g")
+		.attr("class", "axis")
+		.call(d3.axisLeft(y).ticks(20, "s"))	
+		.append("text")
+		.attr("x", 20)
+		.attr("y", y(y.ticks().pop()) + 0.5)
+		.attr("dy", "0.32em")
+		.attr("fill", "#000") 
+		.attr("font-weight", "bold")
+		.attr("text-anchor", "start")
+		.attr("font-size", "16px")
+		.text("Total Recovery + Percentage");
+
+	var legend = g.append("g")
+		.attr("font-family", "sans-serif")
+		.attr("font-size", 14)
+		.attr("text-anchor", "end")
+		.selectAll("g")
+		.data(keys.slice().reverse())
+		.enter().append("g")
+		.attr("transform", function(d, i) { return "translate(0," + i * 20 + ")";});
+
+	legend.append("rect")
+		.attr("x", width - 19)
+		.attr("width", 19)
+		.attr("height", 19)
+		.attr("fill", z);
+
+	legend.append("text")
+		.attr("x", width - 24)
+		.attr("y", 9.5)
+		.attr("dy", "0.32em")
+		.text(function (d) {return d;});
+
+});
+
+
+/* code for creating bad visualization goes here */
+
+/* Answer assignment questions here:
+
+1)
+a) part: Part is encoded by the layout of a stacked bar chart, with one bar corresponding to that part.
+
+b) percentage: Percentage is encoded by the bottom bar of the stacked bar chart, also encoded by the color red. The length of the bar is the percentage that part gets injured.
+
+c) recovery: Recovery is encoded by the top bar of the stacked bar chart, also encoded by the color orange. The length of the bar is the length of the recovery time for that part.
+
+
+2) This is a BAD visualization because, while one can clearly estimate the values for recovery and percentage for the part, its extremely difficult to do in a quick manner. This also does a poor job of visualizing the distribution of the recovery and percentage values. It is possible to identify the minimal and maximal values, but it is very slow and painful.
+
+*/
+</script>
